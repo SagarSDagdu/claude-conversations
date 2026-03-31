@@ -299,12 +299,27 @@ function buildFullSessionHTML(session) {
     .turn-text { line-height: 1.7; font-size: 14px; }
     .turn-user .turn-text { color: #93c5fd; }
     .turn-assistant .turn-text { color: #d1d5db; }
-    .turn-tool { opacity: 0.6; }
+    .turn-tool details {
+      border: 1px solid #0f3460;
+      border-radius: 6px;
+      background: #111827;
+    }
+    .turn-tool summary {
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #666;
+      user-select: none;
+    }
+    .turn-tool summary:hover { color: #999; }
     .turn-tool .turn-text {
       color: #888;
       font-family: "SF Mono", "Fira Code", monospace;
       font-size: 12px;
       white-space: pre-wrap;
+      padding: 8px 12px;
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     .turn-text p { margin-bottom: 10px; }
@@ -408,20 +423,31 @@ function buildFullSessionHTML(session) {
       var div = document.createElement('div');
       div.className = 'turn ' + (roleClass[t.role] || 'turn-assistant');
 
-      var label = document.createElement('div');
-      label.className = 'turn-label ' + (labelClass[t.role] || 'label-assistant');
-      label.textContent = labelText[t.role] || 'Claude';
-      div.appendChild(label);
-
-      var text = document.createElement('div');
-      text.className = 'turn-text';
-      // Don't parse tool output as markdown — show as preformatted text
       if (t.role === 'tool') {
+        // Collapsed by default
+        var details = document.createElement('details');
+        var summary = document.createElement('summary');
+        var preview = t.text.split('\\n')[0].slice(0, 80);
+        summary.textContent = 'Tool Output' + (preview ? ': ' + preview + (t.text.length > 80 ? '...' : '') : '');
+        details.appendChild(summary);
+
+        var text = document.createElement('div');
+        text.className = 'turn-text';
         text.textContent = t.text;
+        details.appendChild(text);
+
+        div.appendChild(details);
       } else {
+        var label = document.createElement('div');
+        label.className = 'turn-label ' + (labelClass[t.role] || 'label-assistant');
+        label.textContent = labelText[t.role] || 'Claude';
+        div.appendChild(label);
+
+        var text = document.createElement('div');
+        text.className = 'turn-text';
         text.innerHTML = marked.parse(t.text);
+        div.appendChild(text);
       }
-      div.appendChild(text);
 
       container.appendChild(div);
     });
