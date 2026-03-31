@@ -20,14 +20,30 @@ Claude Code saves every conversation locally but doesn't provide a way to browse
 
 ## Install
 
+### Install globally from GitHub
+
 ```bash
-npm install -g claude-conversations
+npm install -g github:SagarSDagdu/claude-conversations
 ```
 
-## Usage
+Then run from anywhere:
 
 ```bash
 claude-conversations
+```
+
+### Run without installing
+
+```bash
+npx github:SagarSDagdu/claude-conversations
+```
+
+### Clone and run locally
+
+```bash
+git clone https://github.com/SagarSDagdu/claude-conversations.git
+cd claude-conversations
+node server.js
 ```
 
 This starts a local server and opens your browser to `http://localhost:3456`.
@@ -37,20 +53,6 @@ This starts a local server and opens your browser to `http://localhost:3456`.
 ```
 -p, --port <port>   Port to run the server on (default: 3456)
 -h, --help          Show help
-```
-
-### Without installing
-
-```bash
-npx claude-conversations
-```
-
-### Or clone and run
-
-```bash
-git clone https://github.com/sagardagdu/claude-conversations.git
-cd claude-conversations
-node server.js
 ```
 
 ## How it works
