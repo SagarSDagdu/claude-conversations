@@ -1,0 +1,32 @@
+{
+  "name": "claude-conversations",
+  "version": "1.0.0",
+  "description": "Browse and search your Claude Code conversation history",
+  "main": "server.js",
+  "bin": {
+    "claude-conversations": "./bin/cli.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "conversations",
+    "history",
+    "browser"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sagardagdu/claude-conversations.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "server.js",
+    "index.html",
+    "bin/"
+  ]
+}

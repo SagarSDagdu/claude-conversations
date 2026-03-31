@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Conversations</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    .header {
+      background: #16213e;
+      border-bottom: 1px solid #0f3460;
+      padding: 20px 32px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #e94560;
+      margin-bottom: 12px;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid #0f3460;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-box:focus { border-color: #e94560; }
+    .search-box::placeholder { color: #666; }
+    .filter-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid #0f3460;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: #e94560;
+      border-color: #e94560;
+      color: white;
+    }
+    .stats {
+      font-size: 13px;
+      color: #888;
+      padding: 8px 32px;
+      background: #16213e;
+      border-bottom: 1px solid #0f3460;
+    }
+    .container { padding: 16px 32px; max-width: 1200px; margin: 0 auto; }
+    .session {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .session:hover {
+      border-color: #e94560;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(233, 69, 96, 0.15);
+    }
+    .session-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .session-prompt {
+      font-size: 15px;
+      font-weight: 500;
+      color: #f0f0f0;
+      line-height: 1.4;
+      flex: 1;
+    }
+    .session-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .tag {
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .tag-branch {
+      background: rgba(233, 69, 96, 0.15);
+      color: #e94560;
+    }
+    .tag-project {
+      background: rgba(83, 82, 237, 0.15);
+      color: #8b8aef;
+    }
+    .tag-messages {
+      background: rgba(0, 200, 150, 0.15);
+      color: #00c896;
+    }
+    .tag-date {
+      color: #888;
+      font-size: 12px;
+    }
+    .session-summary {
+      font-size: 13px;
+      color: #aaa;
+      margin-top: 6px;
+      font-style: italic;
+    }
+    .session-id {
+      font-size: 11px;
+      color: #555;
+      margin-top: 6px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .resume-hint {
+      font-size: 11px;
+      color: #555;
+    }
+    .resume-cmd {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: #1a1a2e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #e94560;
+      cursor: pointer;
+      border: 1px solid #0f3460;
+      transition: all 0.2s;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .resume-cmd:hover { background: #0f3460; }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .card-btn {
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid #0f3460;
+      background: #1a1a2e;
+      color: #888;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .card-btn:hover { border-color: #e94560; color: #e94560; }
+    .card-btn.loading { color: #555; cursor: wait; }
+    .preview {
+      margin-top: 10px;
+      background: #111827;
+      border: 1px solid #0f3460;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .preview-line {
+      padding: 1px 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .preview-line.role-user {
+      color: #60a5fa;
+    }
+    .preview-line.role-user::before {
+      content: 'You: ';
+      font-weight: 600;
+      color: #3b82f6;
+    }
+    .preview-line.role-assistant {
+      color: #d1d5db;
+    }
+    .preview-line.role-assistant::before {
+      content: 'Claude: ';
+      font-weight: 600;
+      color: #e94560;
+    }
+    .preview-line.role-tool {
+      color: #888;
+      font-size: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      opacity: 0.7;
+    }
+    .preview-line.role-tool::before {
+      content: 'Tool: ';
+      font-weight: 600;
+      color: #666;
+    }
+    .preview-line.continuation {
+      padding-left: 56px;
+    }
+    .preview-line.continuation::before {
+      content: '';
+    }
+    .content-match {
+      font-size: 12px;
+      color: #999;
+      margin-top: 6px;
+      padding: 6px 10px;
+      background: rgba(233, 69, 96, 0.06);
+      border-left: 3px solid #e94560;
+      border-radius: 0 6px 6px 0;
+      line-height: 1.5;
+    }
+    .content-match-label {
+      color: #e94560;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .preview-separator {
+      text-align: center;
+      color: #555;
+      padding: 8px 0;
+      font-size: 12px;
+      letter-spacing: 4px;
+    }
+    .copied-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #e94560;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+      animation: fadeIn 0.2s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }
+    .empty-state h2 { font-size: 18px; margin-bottom: 8px; }
+    .loading { text-align: center; padding: 40px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Claude Conversations</h1>
+    <div class="controls">
+      <input type="text" class="search-box" id="search" placeholder="Search by prompt, branch, project, or conversation content..." autofocus>
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="today">Today</button>
+      <button class="filter-btn" data-filter="week">This Week</button>
+      <button class="filter-btn" data-filter="month">This Month</button>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="container" id="sessions">
+    <div class="loading">Loading conversations...</div>
+  </div>
+  <div class="copied-toast" id="toast">Copied to clipboard!</div>
+
+  <script>
+    var allSessions = [];
+    var currentFilter = 'all';
+    var contentMatchIds = {};  // sessionId -> snippet (from server content search)
+    var contentSearchQuery = ''; // the query that produced contentMatchIds
+    var searchTimer = null;
+    var searchInFlight = null; // abort controller
+
+    async function load() {
+      var res = await fetch('/api/sessions');
+      allSessions = await res.json();
+      render();
+    }
+
+    function timeAgo(dateStr) {
+      if (!dateStr) return '';
+      var now = new Date();
+      var d = new Date(dateStr);
+      var diff = now - d;
+      var mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + 'm ago';
+      var hours = Math.floor(mins / 60);
+      if (hours < 24) return hours + 'h ago';
+      var days = Math.floor(hours / 24);
+      if (days < 7) return days + 'd ago';
+      if (days < 30) return Math.floor(days / 7) + 'w ago';
+      return d.toLocaleDateString();
+    }
+
+    function matchesFilter(s) {
+      if (currentFilter === 'all') return true;
+      var mod = s.modified ? new Date(s.modified) : null;
+      if (!mod) return false;
+      var now = new Date();
+      if (currentFilter === 'today') return mod.toDateString() === now.toDateString();
+      if (currentFilter === 'week') return (now - mod) < 7 * 86400000;
+      if (currentFilter === 'month') return (now - mod) < 30 * 86400000;
+      return true;
+    }
+
+    function matchesMetadata(s, q) {
+      if (!q) return true;
+      var lower = q.toLowerCase();
+      return (
+        (s.firstPrompt || '').toLowerCase().includes(lower) ||
+        (s.summary || '').toLowerCase().includes(lower) ||
+        (s.branch || '').toLowerCase().includes(lower) ||
+        (s.project || '').toLowerCase().includes(lower)
+      );
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function truncate(str, len) {
+      if (!str) return '';
+      return str.length > len ? str.slice(0, len) + '...' : str;
+    }
+
+    function render() {
+      var q = document.getElementById('search').value.trim();
+      var filtered = allSessions.filter(function(s) {
+        if (!matchesFilter(s)) return false;
+        if (!q) return true;
+        // Match by metadata OR by content search results
+        return matchesMetadata(s, q) || (contentSearchQuery === q && contentMatchIds[s.sessionId]);
+      });
+
+      var statsEl = document.getElementById('stats');
+      var searching = (searchTimer !== null || searchInFlight !== null);
+      var statsText = 'Showing ' + filtered.length + ' of ' + allSessions.length + ' conversations';
+      if (q && searching) statsText += '  (searching content...)';
+      statsEl.textContent = statsText;
+
+      if (filtered.length === 0 && !searching) {
+        document.getElementById('sessions').innerHTML =
+          '<div class="empty-state"><h2>No conversations found</h2><p>Try a different search or filter.</p></div>';
+        return;
+      }
+      if (filtered.length === 0 && searching) {
+        document.getElementById('sessions').innerHTML =
+          '<div class="empty-state"><h2>Searching conversation content...</h2></div>';
+        return;
+      }
+
+      var container = document.getElementById('sessions');
+      container.innerHTML = '';
+
+      for (var i = 0; i < filtered.length; i++) {
+        var s = filtered[i];
+        renderCard(container, s, q);
+      }
+    }
+
+    function renderCard(container, s, q) {
+      var el = document.createElement('div');
+      el.className = 'session';
+
+      var html = '<div class="session-top">';
+      html += '<div class="session-prompt">' + escapeHtml(truncate(s.firstPrompt, 200)) + '</div>';
+      html += '<span class="tag tag-date">' + timeAgo(s.modified) + '</span>';
+      html += '</div>';
+
+      if (s.summary) {
+        html += '<div class="session-summary">' + escapeHtml(s.summary) + '</div>';
+      }
+
+      // Show content match snippet if this session matched via content search
+      var snippet = q && contentSearchQuery === q && contentMatchIds[s.sessionId];
+      if (snippet) {
+        html += '<div class="content-match"><span class="content-match-label">Content match:</span> ' + escapeHtml(snippet) + '</div>';
+      }
+
+      html += '<div class="session-meta">';
+      if (s.branch) {
+        html += '<span class="tag tag-branch">' + escapeHtml(s.branch) + '</span>';
+      }
+      html += '<span class="tag tag-project">' + escapeHtml(s.project) + '</span>';
+      html += '<span class="tag tag-messages">' + s.messageCount + ' msgs</span>';
+      html += '</div>';
+
+      html += '<div class="session-id">';
+      html += '<span class="resume-hint">Resume: </span>';
+      html += '<span class="resume-cmd" title="Click to copy">claude --resume ' + escapeHtml(s.sessionId) + '</span>';
+      html += '</div>';
+
+      html += '<div class="card-actions">';
+      html += '<button class="card-btn expand-btn" data-session-id="' + escapeHtml(s.sessionId) + '">Expand</button>';
+      html += '<a class="card-btn" href="/session/' + escapeHtml(s.sessionId) + '" target="_blank" style="text-decoration:none;">View Full</a>';
+      html += '<button class="card-btn export-btn" data-session-id="' + escapeHtml(s.sessionId) + '">Export Markdown</button>';
+      html += '</div>';
+      html += '<div class="preview" id="preview-' + s.sessionId + '" style="display:none;"></div>';
+
+      el.innerHTML = html;
+
+      el.querySelector('.resume-cmd').addEventListener('click', function() {
+        navigator.clipboard.writeText('claude --resume ' + s.sessionId);
+        var toast = document.getElementById('toast');
+        toast.style.display = 'block';
+        setTimeout(function() { toast.style.display = 'none'; }, 2000);
+      });
+
+      el.querySelector('.export-btn').addEventListener('click', function() {
+        var btn = this;
+        var sid = btn.getAttribute('data-session-id');
+        btn.textContent = 'Exporting...';
+        btn.classList.add('loading');
+        var link = document.createElement('a');
+        link.href = '/api/sessions/' + sid + '/export';
+        link.download = 'claude-' + sid.slice(0, 8) + '.md';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function() {
+          btn.textContent = 'Export Markdown';
+          btn.classList.remove('loading');
+        }, 1000);
+      });
+
+      el.querySelector('.expand-btn').addEventListener('click', function() {
+        var btn = this;
+        var sid = btn.getAttribute('data-session-id');
+        var previewEl = document.getElementById('preview-' + sid);
+
+        if (previewEl.style.display !== 'none') {
+          previewEl.style.display = 'none';
+          btn.textContent = 'Expand';
+          return;
+        }
+
+        if (previewEl.getAttribute('data-loaded')) {
+          previewEl.style.display = 'block';
+          btn.textContent = 'Collapse';
+          return;
+        }
+
+        btn.textContent = 'Loading...';
+        btn.classList.add('loading');
+
+        fetch('/api/sessions/' + sid + '/preview')
+          .then(function(r) { return r.json(); })
+          .then(function(result) {
+            var messages = result.lines || [];
+            var h = '';
+            var prevRole = null;
+            for (var j = 0; j < messages.length; j++) {
+              var m = messages[j];
+              if (m.role === 'separator') {
+                h += '<div class="preview-separator">~ ~ ~ earlier messages omitted ~ ~ ~</div>';
+                prevRole = null;
+                continue;
+              }
+              var isCont = (m.role === prevRole);
+              var cls = 'preview-line role-' + m.role;
+              if (isCont) cls += ' continuation';
+              h += '<div class="' + cls + '">' + escapeHtml(m.text) + '</div>';
+              prevRole = m.role;
+            }
+            if (messages.length === 0) {
+              h = '<div style="color:#555;font-style:italic;">No readable messages found.</div>';
+            }
+            previewEl.innerHTML = h;
+            previewEl.setAttribute('data-loaded', 'true');
+            previewEl.style.display = 'block';
+            btn.textContent = 'Collapse';
+            btn.classList.remove('loading');
+          })
+          .catch(function() {
+            previewEl.innerHTML = '<div style="color:#e94560;">Failed to load preview.</div>';
+            previewEl.style.display = 'block';
+            btn.textContent = 'Collapse';
+            btn.classList.remove('loading');
+          });
+      });
+
+      container.appendChild(el);
+    }
+
+    function onSearchInput() {
+      var q = document.getElementById('search').value.trim();
+
+      // Always render immediately with metadata matches
+      render();
+
+      // Debounce the content search (slower, server-side)
+      if (searchTimer) clearTimeout(searchTimer);
+      if (searchInFlight) { searchInFlight.abort(); searchInFlight = null; }
+
+      if (q.length < 3) {
+        contentMatchIds = {};
+        contentSearchQuery = '';
+        return;
+      }
+
+      searchTimer = setTimeout(function() {
+        searchTimer = null;
+        var controller = new AbortController();
+        searchInFlight = controller;
+
+        fetch('/api/search?q=' + encodeURIComponent(q), { signal: controller.signal })
+          .then(function(r) { return r.json(); })
+          .then(function(result) {
+            searchInFlight = null;
+            contentMatchIds = result.snippets || {};
+            contentSearchQuery = q;
+            // Re-render to include content matches
+            render();
+          })
+          .catch(function(err) {
+            searchInFlight = null;
+            if (err.name !== 'AbortError') console.error(err);
+          });
+      }, 400);
+    }
+
+    document.getElementById('search').addEventListener('input', onSearchInput);
+
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        render();
+      });
+    });
+
+    load();
+  </script>
+</body>
+</html>
