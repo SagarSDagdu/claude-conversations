@@ -386,17 +386,66 @@ function buildFullSessionHTML(session) {
     .turn-text img { max-width: 100%; border-radius: 8px; }
 
     .loading { text-align: center; padding: 40px; color: #888; }
+    .resume-cmd {
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .resume-cmd:hover { color: #ff6b81; }
+    .scroll-bottom {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      background: #e94560;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 20;
+    }
+    .scroll-bottom::after {
+      content: '';
+      display: block;
+      width: 12px;
+      height: 12px;
+      border-right: 2.5px solid white;
+      border-bottom: 2.5px solid white;
+      transform: rotate(45deg);
+      margin: 0 auto;
+      margin-top: -3px;
+    }
+    .scroll-bottom:hover { transform: scale(1.1); }
+    .scroll-bottom.visible { display: flex; }
+    .copied-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #e94560;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+      z-index: 30;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <h1>Conversation ${esc(session.sessionId.slice(0, 8))}...</h1>
     <div class="meta">${meta.join('<span style="color:#333;"> | </span>')}</div>
-    <div class="resume">Resume: <code>claude --resume ${esc(session.sessionId)}</code></div>
+    <div class="resume">Resume: <code class="resume-cmd" title="Click to copy">claude --resume ${esc(session.sessionId)}</code></div>
   </div>
   <div class="container" id="container">
     <div class="loading">Rendering conversation...</div>
   </div>
+  <div class="scroll-bottom" id="scrollBtn" title="Scroll to bottom"></div>
+  <div class="copied-toast" id="toast">Copied to clipboard!</div>
 
   <script>
     var turns = ${turnsJSON};
@@ -450,6 +499,28 @@ function buildFullSessionHTML(session) {
       }
 
       container.appendChild(div);
+    });
+
+    // Copy resume command on click
+    document.querySelector('.resume-cmd').addEventListener('click', function() {
+      navigator.clipboard.writeText(this.textContent);
+      var toast = document.getElementById('toast');
+      toast.style.display = 'block';
+      setTimeout(function() { toast.style.display = 'none'; }, 2000);
+    });
+
+    // Scroll-to-bottom floating button
+    var scrollBtn = document.getElementById('scrollBtn');
+    window.addEventListener('scroll', function() {
+      var fromBottom = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      if (fromBottom > 500) {
+        scrollBtn.classList.add('visible');
+      } else {
+        scrollBtn.classList.remove('visible');
+      }
+    });
+    scrollBtn.addEventListener('click', function() {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
     });
   <\/script>
 </body>
