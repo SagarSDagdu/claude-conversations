@@ -1,6 +1,6 @@
 {
   "name": "@sagardagdu/claude-conversations",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Browse and search your Claude Code conversation history",
   "main": "server.js",
   "bin": {
