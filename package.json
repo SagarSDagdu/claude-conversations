@@ -1,5 +1,5 @@
 {
-  "name": "@sagarsdagdu/claude-conversations",
+  "name": "@sagardagdu/claude-conversations",
   "version": "1.0.0",
   "description": "Browse and search your Claude Code conversation history",
   "main": "server.js",
@@ -22,7 +22,6 @@
     "url": "git+https://github.com/SagarSDagdu/claude-conversations.git"
   },
   "publishConfig": {
-    "provenance": true,
     "access": "public"
   },
   "engines": {

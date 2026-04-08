@@ -20,22 +20,22 @@ Claude Code saves every conversation locally but doesn't provide a way to browse
 
 ## Install
 
-### Install globally from GitHub
+### Run without installing
 
 ```bash
-npm install -g github:SagarSDagdu/claude-conversations
+npx @sagardagdu/claude-conversations
+```
+
+### Install globally
+
+```bash
+npm install -g @sagardagdu/claude-conversations
 ```
 
 Then run from anywhere:
 
 ```bash
 claude-conversations
-```
-
-### Run without installing
-
-```bash
-npx github:SagarSDagdu/claude-conversations
 ```
 
 ### Clone and run locally
